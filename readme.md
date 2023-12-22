@@ -5,13 +5,15 @@ Tiny service to fetch aggregated statistics from participants
 The goal of this service is to propose a standardized way to fetch active participants counter to enable counter federation (like legacy Influenzanet website).
 This service handles counter for **one instance** but several studies can be fetched using the same service instance.
 
+> [!CAUTION]
+> This service is not ready to be used in production. It's not stable yet. Any part of this service is susceptible to change without compatibility with previous It should be released in start of year 2024. 
+
 ## Handled metrics (for each study)
 
-- participants_active (*count*): Count of participants of the study with active status
-- participants_intake (*count*): Count of participants of the study with intake survey submitted since the `FROM_DATE` env
+- participants_enrolled (*count*): Count of participants of the study with active status
+- participants_active (*count*): Count of participants of the study with at least one survey submitted in the sufvey list during the delay
 
 The type of each the counter is provided between parenthesis see below for types
-
 
 ## Usage
 
