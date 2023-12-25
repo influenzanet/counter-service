@@ -3,7 +3,9 @@ package db
 import (
 	"context"
 	"time"
+
 	"github.com/influenzanet/counter-service/pkg/types"
+	"github.com/influenzanet/go-utils/pkg/configs"
 	"github.com/influenzanet/study-service/pkg/dbs/studydb"
 	models "github.com/influenzanet/study-service/pkg/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -15,11 +17,24 @@ type StudyDBService struct {
 	timeout int
 }
 
-func NewStudyDBService(configs models.DBConfig) *StudyDBService {
+// go-utils DBConfig to Study DBConfig
+func toStudyDBConfig(cfg configs.DBConfig) models.DBConfig {
+	return models.DBConfig{
+		URI:             cfg.URI,
+		DBNamePrefix:    cfg.DBNamePrefix,
+		Timeout:         cfg.Timeout,
+		MaxPoolSize:     cfg.MaxPoolSize,
+		IdleConnTimeout: cfg.IdleConnTimeout,
+	}
+}
+
+func NewStudyDBService(config configs.DBConfig) *StudyDBService {
+
+	dbConfig := toStudyDBConfig(config)
 
 	return &StudyDBService{
-		StudyDBService: studydb.NewStudyDBService(configs),
-		timeout:       configs.Timeout,
+		StudyDBService: studydb.NewStudyDBService(dbConfig),
+		timeout:        dbConfig.Timeout,
 	}
 }
 
@@ -33,7 +48,7 @@ func (dbService *StudyDBService) participantName(studyKey string) string {
 
 func inArray(s string, a []string) bool {
 	for _, n := range a {
-		if(n == s) {
+		if n == s {
 			return true
 		}
 	}
@@ -45,7 +60,7 @@ func (dbService *StudyDBService) CheckDB(instanceID string) (bool, error) {
 	defer cancel()
 	dbName := dbService.dbName(instanceID)
 	nn, err := dbService.DBClient.ListDatabaseNames(ctx, bson.D{{Key: "name", Value: dbName}})
-	if(err != nil) {
+	if err != nil {
 		return false, err
 	}
 	return inArray(dbName, nn), nil
@@ -57,7 +72,7 @@ func (dbService *StudyDBService) CheckCollection(instanceID string, collection s
 	ctx, cancel := dbService.getContext()
 	defer cancel()
 	nn, err := db.ListCollectionNames(ctx, bson.D{{Key: "name", Value: collection}})
-	if(err != nil) {
+	if err != nil {
 		return false, err
 	}
 	return inArray(collection, nn), nil
@@ -105,22 +120,21 @@ func filterField(field string, filter types.StatFilter) interface{} {
 	return bson.D{{field, criteria}}
 }
 
-type ParticipantSelector int 
+type ParticipantSelector int
 
 const (
-	NoSelection ParticipantSelector = 0
-	StudyEntry  ParticipantSelector = 1
+	NoSelection      ParticipantSelector = 0
+	StudyEntry       ParticipantSelector = 1
 	SurveySubmission ParticipantSelector = 2
 )
 
-
 type ParticipantOptions struct {
-	ActiveStatus           bool
-	SelectOn			ParticipantSelector
-	SurveyKey	string
+	ActiveStatus bool
+	SelectOn     ParticipantSelector
+	SurveyKeys   []string
 }
 
-func combineCriteria(cc []interface{}) interface{} {
+func combineCriteria(cc []interface{}, glue string) interface{} {
 	if len(cc) == 0 {
 		return bson.D{}
 	}
@@ -131,7 +145,9 @@ func combineCriteria(cc []interface{}) interface{} {
 	for _, c := range cc {
 		a = append(a, c)
 	}
-	return bson.M{"$and": a}
+	m := bson.M{}
+	m[glue] = a
+	return m
 }
 
 func (svc *StudyDBService) CountParticipants(instanceID string, studyKey string, filter types.StatFilter, opts ParticipantOptions) (int64, error) {
@@ -147,15 +163,19 @@ func (svc *StudyDBService) CountParticipants(instanceID string, studyKey string,
 	}
 
 	if opts.SelectOn == SurveySubmission {
-		field := "lastSubmission." + opts.SurveyKey
-		criteria = append(criteria, filterField(field, filter))
+		sub := make([]interface{}, 0, len(opts.SurveyKeys))
+		for _, surveyKey := range opts.SurveyKeys {
+			field := "lastSubmission." + surveyKey
+			sub = append(sub, filterField(field, filter))
+		}
+		criteria = append(criteria, combineCriteria(sub, "$or"))
 	}
 
 	if opts.SelectOn == StudyEntry {
 		criteria = append(criteria, filterField("enteredAt", filter))
 	}
 
-	cc := combineCriteria(criteria)
+	cc := combineCriteria(criteria, "$and")
 
 	count, err := users.CountDocuments(ctx, cc)
 
@@ -164,4 +184,3 @@ func (svc *StudyDBService) CountParticipants(instanceID string, studyKey string,
 	}
 	return count, nil
 }
-

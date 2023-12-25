@@ -1,34 +1,35 @@
 package service
 
-import(
-	"github.com/influenzanet/counter-service/pkg/types"
-	"github.com/influenzanet/counter-service/pkg/stats"
-	"github.com/influenzanet/counter-service/pkg/registry"
-	"github.com/influenzanet/counter-service/pkg/db"
-	"time"
+import (
 	"context"
+	"math"
+
+	"github.com/influenzanet/counter-service/pkg/db"
+	"github.com/influenzanet/counter-service/pkg/registry"
+	"github.com/influenzanet/counter-service/pkg/stats"
+	"github.com/influenzanet/counter-service/pkg/types"
 )
 
 type CounterService struct {
-	registry types.RegistryService
-	collector types.CollectorService
-	channel chan []types.Counter
+	definition types.CounterServiceDefinition
+	registry   types.RegistryService
+	collector  types.CollectorService
+	channel    chan []types.Metric
 }
 
-func NewCounterService(dbService *db.StudyDBService, instance string, studyKey string, delay time.Duration, filter types.StatFilter) *CounterService {
+func NewCounterService(dbService *db.StudyDBService, instance string, def types.CounterServiceDefinition) *CounterService {
 
-	statSvc := stats.NewStatService(dbService, instance, studyKey, delay)
-	statSvc.WithFilter(filter)
-	registrySvc := registry.NewRegistryService(studyKey)
-	channel := make(chan []types.Counter, 3)
+	statSvc := stats.NewStatService(dbService, instance, def)
+	registrySvc := registry.NewRegistryService(def.Name)
+	channel := make(chan []types.Metric, 3)
 
 	return &CounterService{
-		registry: registrySvc,
-		collector: statSvc,
-		channel: channel,
+		definition: def,
+		registry:   registrySvc,
+		collector:  statSvc,
+		channel:    channel,
 	}
 }
-
 
 func (c *CounterService) Start(ctx context.Context) {
 	go c.registry.Handle(ctx, c.channel)
@@ -37,4 +38,29 @@ func (c *CounterService) Start(ctx context.Context) {
 
 func (c *CounterService) Registry() types.RegistryService {
 	return c.registry
+}
+
+func (c *CounterService) Name() string {
+	return c.definition.Name
+}
+
+func (c *CounterService) IsPublic() bool {
+	return c.definition.Public
+}
+
+func (c *CounterService) IsRoot() bool {
+	return c.definition.Root
+}
+
+func (c *CounterService) Data() types.CounterData {
+	data := c.registry.Read()
+	update := int64(math.Round(c.definition.UpdateDelay.Seconds()))
+	return types.CounterData{
+		UpdateDelay: update,
+		Metrics:     data,
+	}
+}
+
+func (c *CounterService) Definition() types.CounterServiceDefinition {
+	return c.definition
 }

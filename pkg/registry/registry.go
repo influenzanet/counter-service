@@ -1,51 +1,51 @@
 package registry
 
 import (
-
 	"context"
 	"sync"
+
 	"github.com/coneno/logger"
 	"github.com/influenzanet/counter-service/pkg/types"
 )
 
 type RegistryService struct {
-	studyKey	string
-	counters	map[string]types.Counter
-	mu       sync.Mutex
+	name    string
+	metrics map[string]types.Metric
+	mu      sync.Mutex
 }
 
 func NewRegistryService(studyKey string) *RegistryService {
-	counters := make(map[string]types.Counter, 0)
-	return &RegistryService{studyKey: studyKey, counters:counters}
+	metrics := make(map[string]types.Metric, 0)
+	return &RegistryService{name: studyKey, metrics: metrics}
 }
 
-func (r *RegistryService) Handle(ctx context.Context, input <-chan[]types.Counter ) error {
-	for{
+func (r *RegistryService) Handle(ctx context.Context, input <-chan []types.Metric) error {
+	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 
 		case result := <-input:
-			logger.Info.Printf("Update study '%s'", r.studyKey)
+			logger.Info.Printf("Update study '%s'", r.name)
 			r.updateCounters(result)
-		}	
+		}
 	}
 }
 
-func (r *RegistryService) updateCounters(result []types.Counter) {
+func (r *RegistryService) updateCounters(result []types.Metric) {
 	r.mu.Lock()
 	for _, res := range result {
-		r.counters[res.Name] = res
+		r.metrics[res.Name] = res
 	}
 	r.mu.Unlock()
 }
 
-func (r *RegistryService) Read() []types.Counter {
+func (r *RegistryService) Read() []types.Metric {
 	r.mu.Lock()
-	cc := make([]types.Counter,0, len(r.counters))
-	for _, c := range r.counters {
+	cc := make([]types.Metric, 0, len(r.metrics))
+	for _, c := range r.metrics {
 		cc = append(cc, c)
 	}
 	r.mu.Unlock()
 	return cc
-} 
+}

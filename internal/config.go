@@ -1,52 +1,93 @@
 package internal
 
 import (
-	"fmt"
+	"encoding/json"
 	"log"
 	"os"
-	"strconv"
+	"strings"
+	"time"
 
-	"github.com/influenzanet/study-service/pkg/types"
-	
+	"github.com/influenzanet/counter-service/pkg/types"
+	"github.com/influenzanet/go-utils/pkg/configs"
 )
 
 const ENV_USE_NO_CURSOR_TIMEOUT = "USE_NO_CURSOR_TIMEOUT"
 
-func GetStudyDBConfig() types.DBConfig {
-	connStr := os.Getenv("STUDY_DB_CONNECTION_STR")
-	username := os.Getenv("STUDY_DB_USERNAME")
-	password := os.Getenv("STUDY_DB_PASSWORD")
-	prefix := os.Getenv("STUDY_DB_CONNECTION_PREFIX") // Used in test mode
-	if connStr == "" || username == "" || password == "" {
-		log.Fatal("Couldn't read DB credentials.")
-	}
-	URI := fmt.Sprintf(`mongodb%s://%s:%s@%s`, prefix, username, password, connStr)
+func LoadConfig() types.ServiceConfig {
 
-	var err error
-	Timeout, err := strconv.Atoi(os.Getenv("DB_TIMEOUT"))
+	dbConfig := configs.GetMongoDBConfig("STUDY_")
+
+	InstanceID := configs.RequireEnv("INSTANCE_ID")
+
+	port := configs.GetEnvInt("PORT", 0)
+
+	// Shorthand configuration for influenzanet study
+	InfluenzanetStudy := os.Getenv("INFLUENZANET_STUDY")
+
+	definitions := make([]types.CounterServiceDefinition, 0, 1)
+
+	if InfluenzanetStudy != "" {
+		ifnDef, err := GetInfluenzanetStudy(InfluenzanetStudy)
+		if err != nil {
+			log.Fatalf("Error reading INFLUENZANET_STUDY: %s", err)
+		}
+		definitions = append(definitions, ifnDef)
+	}
+
+	extraStudiesFile := os.Getenv("EXTRA_STUDIES_FILE")
+
+	if extraStudiesFile != "" {
+		dd, err := GetDefinitionsFromFile(extraStudiesFile)
+		if err != nil {
+			log.Fatalf("Error reading EXTRA_STUDIES_FILE in %s: %s", extraStudiesFile, err)
+		}
+		definitions = append(definitions, dd...)
+	}
+
+	metaAuthKey := os.Getenv("META_AUTH_KEY")
+
+	return types.ServiceConfig{
+		StudyDBConfig:  dbConfig,
+		Port:           port,
+		MetaAuthKey:    metaAuthKey,
+		InstanceID:     InstanceID,
+		StatDefinition: definitions,
+	}
+
+}
+
+func GetInfluenzanetStudy(envString string) (types.CounterServiceDefinition, error) {
+	def := types.CounterServiceDefinition{
+		Name:                     "influenzanet",
+		Root:                     true,
+		Public:                   true,
+		ActiveParticipantSurveys: []string{"intake", "weekly", "vaccination"},
+		ActiveParticipantDelay:   types.Duration{Duration: time.Hour * 546 * 24}, // Default is 18 month to count participant as active,
+		UpdateDelay:              types.Duration{Duration: time.Hour * 24},
+	}
+
+	if strings.Contains(envString, "{") {
+		err := json.Unmarshal([]byte(envString), &def)
+		if err != nil {
+			return def, nil
+		}
+	} else {
+		// If provided value is only a string, then it's considered to be the StudyKey
+		def.StudyKey = envString
+	}
+
+	return def, nil
+}
+
+func GetDefinitionsFromFile(extraStudiesFile string) ([]types.CounterServiceDefinition, error) {
+	b, err := os.ReadFile(extraStudiesFile)
 	if err != nil {
-		log.Fatal("DB_TIMEOUT: " + err.Error())
+		return nil, err
 	}
-	IdleConnTimeout, err := strconv.Atoi(os.Getenv("DB_IDLE_CONN_TIMEOUT"))
+	defs := make([]types.CounterServiceDefinition, 0)
+	err = json.Unmarshal(b, &defs)
 	if err != nil {
-		log.Fatal("DB_IDLE_CONN_TIMEOUT" + err.Error())
+		return nil, err
 	}
-	mps, err := strconv.Atoi(os.Getenv("DB_MAX_POOL_SIZE"))
-	MaxPoolSize := uint64(mps)
-	if err != nil {
-		log.Fatal("DB_MAX_POOL_SIZE: " + err.Error())
-	}
-
-	//noCursorTimeout := os.Getenv(ENV_USE_NO_CURSOR_TIMEOUT) == "true"
-
-	DBNamePrefix := os.Getenv("DB_DB_NAME_PREFIX")
-
-	return types.DBConfig{
-		URI:             URI,
-		Timeout:         Timeout,
-		IdleConnTimeout: IdleConnTimeout,
-		//NoCursorTimeout: noCursorTimeout,
-		MaxPoolSize:     MaxPoolSize,
-		DBNamePrefix:    DBNamePrefix,
-	}
+	return defs, nil
 }
