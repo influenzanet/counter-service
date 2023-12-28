@@ -8,7 +8,7 @@ import (
 type ServiceConfig struct {
 	StudyDBConfig  configs.DBConfig
 	Port           int    // Http Port to listen to
-	MetaAuthKey    string // Auth key to access meta.json from server
+	MetaAuthKey    string // Auth key to access meta.json from server (will not be used if empty)
 	InstanceID     string // Name of this instance
 	Platform       string // Code of the platform
 	StatDefinition []CounterServiceDefinition

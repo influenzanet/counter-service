@@ -9,12 +9,12 @@ import (
 )
 
 type HTTPServer struct {
-	port     int
-	counters map[string]types.CounterService
-	platform string
-	extra    []string
-	root     []string
-	authKey  string
+	port        int
+	counters    map[string]types.CounterService
+	platform    string
+	extra       []string
+	root        []string
+	metaAuthKey string
 }
 
 func NewHTTPServer(config types.ServiceConfig, counters map[string]types.CounterService) *HTTPServer {
@@ -37,12 +37,12 @@ func NewHTTPServer(config types.ServiceConfig, counters map[string]types.Counter
 	}
 
 	return &HTTPServer{
-		port:     port,
-		platform: config.Platform,
-		counters: counters,
-		root:     root,
-		extra:    extra,
-		authKey:  config.MetaAuthKey,
+		port:        port,
+		platform:    config.Platform,
+		counters:    counters,
+		root:        root,
+		extra:       extra,
+		metaAuthKey: config.MetaAuthKey,
 	}
 }
 
@@ -72,10 +72,10 @@ func (h *HTTPServer) Start() {
 
 	})
 
-	if h.authKey != "" {
+	if h.metaAuthKey != "" {
 
 		authMiddleWare := gin.BasicAuth(gin.Accounts{
-			"admin": h.authKey,
+			"admin": h.metaAuthKey,
 		})
 
 		r.GET("/meta.json", authMiddleWare, func(c *gin.Context) {
