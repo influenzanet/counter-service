@@ -21,25 +21,34 @@ func LoadConfig() types.ServiceConfig {
 
 	port := configs.GetEnvInt("PORT", 0)
 
-	// Shorthand configuration for influenzanet study
-	InfluenzanetStudy := os.Getenv("INFLUENZANET_STUDY")
+	// Shorthand configuration for influenzanet counters
+	InfluenzanetCounter := os.Getenv("INFLUENZANET_COUNTER")
 
 	definitions := make([]types.CounterServiceDefinition, 0, 1)
 
-	if InfluenzanetStudy != "" {
-		ifnDef, err := GetInfluenzanetStudy(InfluenzanetStudy)
+	if InfluenzanetCounter != "" {
+		ifnDef, err := GetInfluenzanetStudy(InfluenzanetCounter)
 		if err != nil {
-			log.Fatalf("Error reading INFLUENZANET_STUDY: %s", err)
+			log.Fatalf("Error reading INFLUENZANET_COUNTER: %s", err)
 		}
 		definitions = append(definitions, ifnDef)
 	}
 
-	extraStudiesFile := os.Getenv("EXTRA_STUDIES_FILE")
-
-	if extraStudiesFile != "" {
-		dd, err := GetDefinitionsFromFile(extraStudiesFile)
+	extraCountersEnv := os.Getenv("EXTRA_COUNTERS")
+	if extraCountersEnv != "" {
+		dd, err := parseDefinitions([]byte(extraCountersEnv))
 		if err != nil {
-			log.Fatalf("Error reading EXTRA_STUDIES_FILE in %s: %s", extraStudiesFile, err)
+			log.Fatalf("Error reading EXTRA_COUNTERS in %s: %s", extraCountersEnv, err)
+		}
+		definitions = append(definitions, dd...)
+	}
+
+	extraCountersFile := os.Getenv("EXTRA_COUNTERS_FILE")
+
+	if extraCountersFile != "" {
+		dd, err := GetDefinitionsFromFile(extraCountersFile)
+		if err != nil {
+			log.Fatalf("Error reading EXTRA_COUNTERS_FILE in %s: %s", extraCountersFile, err)
 		}
 		definitions = append(definitions, dd...)
 	}
@@ -84,8 +93,12 @@ func GetDefinitionsFromFile(extraStudiesFile string) ([]types.CounterServiceDefi
 	if err != nil {
 		return nil, err
 	}
+	return parseDefinitions(b)
+}
+
+func parseDefinitions(data []byte) ([]types.CounterServiceDefinition, error) {
 	defs := make([]types.CounterServiceDefinition, 0)
-	err = json.Unmarshal(b, &defs)
+	err := json.Unmarshal(data, &defs)
 	if err != nil {
 		return nil, err
 	}
