@@ -67,7 +67,7 @@ func (s *StatsService) Fetch() ([]types.Metric, error) {
 		if err != nil {
 			logger.Error.Printf("Error for counter %d : %s", index, err)
 		} else {
-			metric.Time = time.Now()
+			metric.Time = types.Timestamp{Time: time.Now()}
 			metrics = append(metrics, metric)
 		}
 	}
