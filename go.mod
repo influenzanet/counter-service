@@ -1,6 +1,6 @@
 module github.com/influenzanet/counter-service
 
-go 1.17
+go 1.19
 
 require (
 	github.com/coneno/logger v1.2.2

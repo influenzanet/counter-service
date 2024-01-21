@@ -4,7 +4,7 @@
 
 ARG DIR=/go/src/github.com/influenzanet/counter-service
 
-FROM golang:1.17-alpine as builder
+FROM golang:1.19-alpine as builder
 ARG DIR # Populate global ARG for this build
 ARG VERSION=Unknown
 ARG COMMIT=Unknown
