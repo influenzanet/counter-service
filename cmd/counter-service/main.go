@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/influenzanet/counter-service/internal"
 	"github.com/influenzanet/counter-service/pkg/db"
@@ -16,7 +17,21 @@ const FormatDateOnly = "2006-01-02"
 
 func main() {
 
+	// Only show version
+	ShowVersion := false
+
+	if len(os.Args) > 1 {
+		arg := os.Args[1]
+		if arg == "version" {
+			ShowVersion = true
+		}
+	}
+
 	log.Printf("%s Version: %s (%s)", version.Name, version.Version, version.Revision)
+
+	if ShowVersion {
+		os.Exit(0)
+	}
 
 	config := internal.LoadConfig()
 
