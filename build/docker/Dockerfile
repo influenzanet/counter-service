@@ -8,7 +8,7 @@ FROM golang:1.19-alpine as builder
 ARG DIR # Populate global ARG for this build
 ARG VERSION=Unknown
 ARG COMMIT=Unknown
-ARG GOPKG=github.com/influenzanet/counter-service
+ARG GOPKG=github.com/influenzanet/counter-service/pkg/version
 RUN apk update && apk add --no-cache git ca-certificates && update-ca-certificates
 RUN mkdir -p ${DIR}
 ENV GO111MODULE=on
@@ -19,7 +19,8 @@ COPY go.sum .
 RUN go mod download
 COPY . .
 WORKDIR ${DIR}/cmd/counter-service
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static" -X ${GOPKG}/version.Version="${VERSION}" -X ${GOPKG}/version.Revision="${COMMIT}"' -o app .
+ARG LDFLAG="-extldflags '-static' -X ${GOPKG}.Version=${VERSION} -X ${GOPKG}.Revision=${COMMIT}"
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags "${LDFLAG}" -o app .
 RUN echo "${VERSION};${COMMIT}" > version
 ##########################
 # Image 
