@@ -6,6 +6,7 @@ require (
 	github.com/coneno/logger v1.2.2
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.8.1
+	github.com/influenzanet/go-utils v0.2.14-configs.1
 	github.com/influenzanet/study-service v1.1.0
 	go.mongodb.org/mongo-driver v1.11.1
 )
@@ -18,7 +19,6 @@ require (
 	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/influenzanet/go-utils v0.2.14 // indirect
 	github.com/influenzanet/logging-service v0.2.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.15.12 // indirect
