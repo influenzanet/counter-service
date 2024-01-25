@@ -18,15 +18,16 @@ COPY go.mod .
 COPY go.sum .
 RUN go mod download
 COPY . .
-WORKDIR $DIR/cmd/counter-service
+WORKDIR ${DIR}/cmd/counter-service
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-extldflags "-static" -X ${GOPKG}/version.Version="${VERSION}" -X ${GOPKG}/version.Revision="${COMMIT}"' -o app .
-
+RUN echo "${VERSION};${COMMIT}" > version
 ##########################
 # Image 
 ##########################
 FROM scratch
 ARG DIR
-COPY --from=builder $DIR/cmd/counter-service/app /app/
+COPY --from=builder ${DIR}/cmd/counter-service/app /app/
+COPY --from=builder ${DIR}/cmd/counter-service/version /app/
 WORKDIR /app
 ENV GIN_MODE=release
 ENV PORT=5021
