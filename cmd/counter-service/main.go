@@ -9,11 +9,14 @@ import (
 	"github.com/influenzanet/counter-service/pkg/server"
 	"github.com/influenzanet/counter-service/pkg/service"
 	"github.com/influenzanet/counter-service/pkg/types"
+	"github.com/influenzanet/counter-service/pkg/version"
 )
 
 const FormatDateOnly = "2006-01-02"
 
 func main() {
+
+	log.Printf("%s Version: %s (%s)", version.Name, version.Version, version.Revision)
 
 	config := internal.LoadConfig()
 
