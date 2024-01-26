@@ -19,6 +19,8 @@ func LoadConfig() types.ServiceConfig {
 
 	InstanceID := configs.RequireEnv("INSTANCE_ID")
 
+	PlatformCode := os.Getenv("PLATFORM")
+
 	port := configs.GetEnvInt("PORT", 0)
 
 	// Shorthand configuration for influenzanet counters
@@ -61,6 +63,7 @@ func LoadConfig() types.ServiceConfig {
 		MetaAuthKey:    metaAuthKey,
 		InstanceID:     InstanceID,
 		StatDefinition: definitions,
+		Platform:       PlatformCode,
 	}
 
 }
