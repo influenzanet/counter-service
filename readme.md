@@ -8,12 +8,25 @@ This service handles counter for **one instance** but several studies can be fet
 > [!CAUTION]
 > This service is not ready to be used in production. It's not stable yet. Any part of this service is susceptible to change without compatibility with previous It should be released in start of year 2024. 
 
+## Influenzanet standard installation
+
+To enable simple discovery of platforms, this counter service is expected to be available on the same path of the influenzanet platform web domain.
+
+The URL must be : https://[platform-domain]/.well-known/influenzanet/counter
+
+For example, if the platform base domain  is example.influenzanet.com then the expected URL should be:
+    https://example.influenzanet.com/.well-known/influenzanet/counter
+
+
 ## Handled metrics (for each study)
 
 - participants_enrolled (*count*): Count of participants of the study with active status
 - participants_active (*count*): Count of participants of the study with at least one survey submitted in the active survey list (if the delay of the last submission is less than the active_delay)
 
-The type of each the counter is provided between parenthesis see below for types
+The type of each the counter is provided between parenthesis see below for types.
+
+Metrics are not updated on each request, but periodically (defined by `update_delay` duration of each counter). Values exposed by the server are the values
+evaluated at the update.
 
 ## Usage
 
@@ -52,11 +65,11 @@ Returns the default counters and reference to other public counters
 
 - `platform` : code of the platform (usually country code)
 - `extra`: list of other available counter names (if public=true in counter definition)
-- `counters`: list of root counters (structure of each entry is the same as the individual counter)
+- `counters`: list of root counters (structure of each entry is the same as the individual counter, see below)
 
 ### $baseURI/counter/`$name`
 
-Fetch stats for a specific counter with name $name (e.g. 'influenzanet').
+Fetch stats for a specific counter with name provided in $name (e.g. 'influenzanet').
 
 Response a counter stat object:
 
@@ -98,13 +111,14 @@ Show configuration of counters after the config is loaded. It's intended to be u
 
 ## Configuration
 
-Environments:
+Configuration is done using environment variables:
 
-- Db Connection vars: see in [Study Service](https://github.com/grippenet/study-service/blob/master/build/docker/example/study-service-env.list), accept User Db variables and general db client settings.
+- Db Connection vars to Study Db: see in [Study Service](https://github.com/grippenet/study-service/blob/master/build/docker/example/study-service-env.list), accept User Db variables and general db client settings.
 
 - `INSTANCE_ID` instance id of the target instance of the platform
+- `PLATFORM` : Code of the influenzanet Platform (Optional, attributed by Influenzanet)
 - `INFLUENZANET_COUNTER`: Specification for Influenzanet counter. It can be either the study name of the Influenzanet Surveillance compliant study or a JSON counter definition, if json object is incomplete, default value is used for the missing keys (so you can provide only values where you want to override the default).
-- `EXTRA_COUNTERS` : A Json array with extra counter definitions (each entry should be a Counter Definition json object )
+- `EXTRA_COUNTERS` : Optional, A Json array with extra counter definitions (each entry should be a Counter Definition json object )
 - `EXTRA_COUNTERS_FILE` : Same as  `EXTRA_COUNTERS` but with the name of the file containing the json array
 
 The InfluenzaNet default counter uses this configuration:
@@ -140,13 +154,12 @@ Study key is expected (no default is provided). It's not advised to override the
 ```
 
 - studykey: name of the study (in study service)
-- active_surveys: list of survey key for which a response submitted will consider a participant as active
-- active_delay: Maximum delay of survey submission to consider the participant as active (integer or time.Duration format, e.g. '10s','30m','1h')
+- active_surveys: list of survey key for which a submitted response will count its participant as active
+- active_delay: Maximum delay (from current time) of survey submission to consider the participant as active (integer or time.Duration format, e.g. '10s','30m','1h')
 - update_delay: Delay between two update of the counter
 - name: Name of the counter (must be unique)
 - root: boolean, if true the counter is shown at the root of the service address
 - public: boolean, if true the counter is shown as extra in the root (if root=false), ignored if root=true 
-
 
 ### HTTP Server
 To configure Http Server:
