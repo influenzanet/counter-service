@@ -17,7 +17,7 @@ func LoadConfig() types.ServiceConfig {
 
 	dbConfig := configs.GetMongoDBConfig("STUDY_")
 
-	InstanceID := configs.RequireEnv("INSTANCE_ID")
+	InstanceID := configs.RequireEnv("INSTANCE_ID", false)
 
 	PlatformCode := os.Getenv("PLATFORM")
 

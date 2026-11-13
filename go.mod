@@ -6,7 +6,7 @@ require (
 	github.com/coneno/logger v1.2.2
 	github.com/gin-contrib/cors v1.7.11
 	github.com/gin-gonic/gin v1.12.0
-	github.com/influenzanet/go-utils v0.2.14-configs.1
+	github.com/influenzanet/go-utils v0.2.15
 	github.com/influenzanet/study-service v1.8.0
 	go.mongodb.org/mongo-driver v1.17.10
 )
