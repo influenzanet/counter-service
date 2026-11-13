@@ -29,6 +29,8 @@ type CounterService interface {
 
 // CounterData holds output data for a CounterService
 type CounterData struct {
-	UpdateDelay int64    `json:"period"` // Number of second between 2 updates
-	Metrics     []Metric `json:"data"`
+	MaxSubmissionAge int64    `json:"max_submission_age"`
+	ActiveSurveys    []string `json:"active_surveys"`
+	UpdateDelay      int64    `json:"update_period"` // Number of second between 2 updates
+	Metrics          []Metric `json:"data"`
 }

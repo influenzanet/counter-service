@@ -55,9 +55,12 @@ func (c *CounterService) IsRoot() bool {
 func (c *CounterService) Data() types.CounterData {
 	data := c.registry.Read()
 	update := int64(math.Round(c.definition.UpdateDelay.Seconds()))
+	max_submission_age := int64(math.Round(c.definition.ActiveParticipantDelay.Seconds()))
 	return types.CounterData{
-		UpdateDelay: update,
-		Metrics:     data,
+		UpdateDelay:      update,
+		Metrics:          data,
+		ActiveSurveys:    c.definition.ActiveParticipantSurveys,
+		MaxSubmissionAge: max_submission_age,
 	}
 }
 

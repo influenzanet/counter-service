@@ -73,7 +73,9 @@ Fetch stats for a specific counter with name provided in $name (e.g. 'influenzan
 
 Response a counter stat object:
 
-- `period`: the update period of the counter (time between 2 updates) in seconds
+- `update_period`: the update period of the counter (time between 2 updates) in seconds
+- `max_submission_age`: 
+- `active_surveys`
 - `data`: array of metrics stat
 
 Each metric has 4 possible fields: 
@@ -87,7 +89,9 @@ Example
 
 ```json
 {
-    "period": 86400,
+    "update_period": 86400,
+    "max_submission_age":46656000,
+    "active_surveys": ["intake","weekly","vaccination"],
     "data": [
         {
             "name": "participants_enrolled",
