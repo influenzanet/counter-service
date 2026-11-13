@@ -4,7 +4,7 @@
 
 ARG DIR=/go/src/github.com/influenzanet/counter-service
 
-FROM golang:1.19-alpine as builder
+FROM golang:1.26-alpine AS builder
 ARG DIR # Populate global ARG for this build
 ARG VERSION=Unknown
 ARG COMMIT=Unknown
@@ -32,5 +32,5 @@ COPY --from=builder ${DIR}/cmd/counter-service/version /app/
 WORKDIR /app
 ENV GIN_MODE=release
 ENV PORT=5021
-EXPOSE 5021:5021
+EXPOSE 5021
 CMD ["./app"]
